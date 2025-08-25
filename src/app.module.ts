@@ -1,17 +1,16 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
+import { UserModule } from './users/users.module';
+// import { AuthModule } from './auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AdminModule } from './admin/admin.module';
+// import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb+srv://admin:admin123@cluster0.xcpoua7.mongodb.net/'),
-    UsersModule,
-    AuthModule,
-    AdminModule,
+    MongooseModule.forRoot('mongodb+srv://admin:3cFjdk8H9N4gjpse@cluster0.uaccghk.mongodb.net/WrapSafar?retryWrites=true&w=majority&appName=Cluster0'),
+    UserModule,
+    // AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
