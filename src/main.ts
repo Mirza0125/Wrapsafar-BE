@@ -10,6 +10,17 @@ async function bootstrap() {
     .setDescription('The Wrapsafar API description')
     .setVersion('1.0')
     .addTag('auth')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'access-token',
+    )
     .addTag('users')
     .build();
   const document = SwaggerModule.createDocument(app, config);

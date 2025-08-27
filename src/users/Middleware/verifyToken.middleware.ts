@@ -12,49 +12,44 @@ dotenv.config();
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(@InjectModel(User.name) private readonly userModel: Model<User>,) {}
+  constructor(@InjectModel(User.name) private readonly userModel: Model<User>,) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<CustomRequest>();
 
     const authHeader = req.headers.authorization;
+    console.log('🔑 Incoming Authorization Header:', authHeader);
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ Token missing or wrong format');
       throw new UnauthorizedException('A Bearer token is required for authentication.');
     }
 
     const token = authHeader.split(' ')[1];
-
-    if (!token) {
-      throw new UnauthorizedException('Invalid Bearer token format.');
-    }
+    console.log('🟢 Extracted Token:', token);
 
     try {
       const secretKey = process.env.JWT_VERIFICATION_TOKEN_SECRET || '';
-
       const decodedRegister = jwt.verify(token, secretKey) as jwt.JwtPayload;
 
-      if (!decodedRegister.exp) {
-        throw new UnauthorizedException('Invalid token: Missing expiration time.');
-      }
-
-      const currentTime = Math.floor(Date.now() / 1000);
-
-      if (decodedRegister.exp < currentTime) {
-        throw new UnauthorizedException('Token has expired.');
-      }
+      console.log('✅ Decoded Payload:', decodedRegister);
 
       const register = await this.userModel.findOne({ email: decodedRegister.email });
+      console.log('👤 User from DB:', register);
 
       if (!register) {
+        console.log('❌ No user found for decoded payload');
         throw new UnauthorizedException('Register does not exist.');
       }
 
       req.user = register;
-      return true;
+      console.log('👍 User attached to request:', req.user.fullName);
 
+      return true;
     } catch (err) {
+      console.error('🚨 JWT verification failed:', err.message);
       throw new UnauthorizedException('Invalid Token');
     }
   }
+
 }

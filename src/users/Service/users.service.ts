@@ -9,6 +9,7 @@ import { EmailService } from '../Middleware/emailService';
 import { OTPData } from '../Middleware/otp.middleware';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { UpdateUserDto } from '../DTOs/userUpdate.dto';
 
 @Injectable()
 export class UserService implements UserServiceInterface {
@@ -16,7 +17,7 @@ export class UserService implements UserServiceInterface {
     @InjectModel(User.name)
     private readonly userModel: Model<User>,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   // Find all users
   async findAll(): Promise<ResponseWrapper<any>> {
@@ -30,6 +31,7 @@ export class UserService implements UserServiceInterface {
   // Find a single user by ID
   async findOne(id: string): Promise<ResponseWrapper<any>> {
     const result = await this.userModel.findById(id).exec();
+    console.log("data==>", result)
     if (!result) {
       throw new UnauthorizedException('No record found with the provided ID');
     }
@@ -44,12 +46,38 @@ export class UserService implements UserServiceInterface {
 
     const newUser = new this.userModel(createUserDto);
     const savedResult = await newUser.save();
-    console.log("data==>", savedResult)
+    // console.log("data==>", savedResult)
 
     if (!savedResult) {
       throw new UnauthorizedException('User not registered.');
     }
     return new ResponseWrapper(201, 'User created successfully', savedResult);
+  }
+
+  // Update an existing register
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<ResponseWrapper<any>> {
+    try {
+      // Agar password aya hai to usay hash karo
+      if (updateUserDto.password) {
+        const saltRounds = 10;
+        updateUserDto.password = await bcrypt.hash(updateUserDto.password, saltRounds);
+      }
+
+      // User ko update karo aur updated document return karo
+      const updatedUser = await this.userModel.findByIdAndUpdate(
+        id,
+        { $set: updateUserDto },
+        { new: true } // new:true means return updated document
+      ).exec();
+
+      if (!updatedUser) {
+        throw new UnauthorizedException('No record found with the provided ID');
+      }
+
+      return new ResponseWrapper(200, 'User updated successfully', updatedUser);
+    } catch (error) {
+      throw new UnauthorizedException(error.message || 'Update failed');
+    }
   }
 
   // Remove a user
@@ -68,7 +96,8 @@ export class UserService implements UserServiceInterface {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { username: result.fullName, sub: result._id };
+    const payload = { username: result.fullName, sub: result._id, email: result.email };
+    console.log("Payload==>", payload)
     const access_token = jwt.sign(
       payload,
       process.env.JWT_VERIFICATION_TOKEN_SECRET || 'fallback_secret',

@@ -8,6 +8,7 @@ import {
   Delete,
   UnauthorizedException,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import fs from 'fs';
 import { UserService } from '../Service/users.service';
@@ -16,27 +17,32 @@ import { CreateUserDto } from '../DTOs/user.dto';
 import { ResponseWrapper } from '../WrapperClasses/response.wrapper';
 import generateOTP from '../Middleware/otp.middleware';
 import { JwtAuthGuard } from '../Middleware/verifyToken.middleware';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UpdateUserDto } from '../DTOs/userUpdate.dto';
 
 @ApiTags('users')
 @Controller('register')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get()
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'List of all users' })
-  async findAll(): Promise<ResponseWrapper<any>> {
+  async findAll(@Req() req: any): Promise<ResponseWrapper<any>> {
+    console.log('🔥 Inside findAll() | Authenticated User:', req.user);
     return this.userService.findAll();
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, description: 'User found successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async findOne(@Param('id') id: string): Promise<ResponseWrapper<any>> {
+  async findOne(@Param('id') id: string, @Req() req: any): Promise<ResponseWrapper<any>> {
+    console.log('🔑 Authorization header from Swagger:', req.headers.authorization);
     return this.userService.findOne(id);
   }
 
@@ -50,17 +56,22 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
-  // @Put(':id')
-  // @UseGuards(JwtAuthGuard)
-  // async update(
-  //   @Param('id') id: number,
-  //   @Body() updateRegisterDto: UpdateRegisterDto,
-  // ): Promise<ResponseWrapper<any>> {
-  //   return this.userService.update(id, updateRegisterDto);
-  // }
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<ResponseWrapper<any>> {
+    return this.userService.update(id, updateUserDto);
+  }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Delete user by ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   async remove(@Param('id') id: string): Promise<ResponseWrapper<any>> {
@@ -73,16 +84,16 @@ export class UserController {
     schema: {
       type: 'object',
       properties: {
-        userName: { type: 'string', example: 'zohaib123' },
+        fullName: { type: 'string', example: 'zohaib123' },
         password: { type: 'string', example: 'P@ssw0rd' },
       },
     },
   })
   @ApiResponse({ status: 200, description: 'User logged in successfully' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() body: { userName: string; password: string }) {
-    const { userName, password } = body;
-    return await this.userService.login(userName, password); // Return wrapped dynamic response
+  async login(@Body() body: { fullName: string; password: string }) {
+    const { fullName, password } = body;
+    return await this.userService.login(fullName, password); // Return wrapped dynamic response
   }
 
   // @Post('firebase-login')
