@@ -48,7 +48,7 @@ export class UserController {
 
   @Post()
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiBody({ type: CreateUserDto }) // 👈 tells Swagger what body to expect
+  @ApiBody({ type: CreateUserDto })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   async create(
     @Body() createUserDto: CreateUserDto,
@@ -103,25 +103,25 @@ export class UserController {
   //   return this.userService.loginWithFirebase(idToken);
   // }
 
-  @Post('sendOTP')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Send OTP to user email' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', example: 'zohaib@example.com' },
-      },
-    },
-  })
-  @ApiResponse({ status: 200, description: 'OTP sent successfully' })
-  async OTP(
-    @Body() { email }: { email: string },
-  ): Promise<ResponseWrapper<any>> {
-    const otpi = generateOTP;
-    const otp = otpi.generateOTP();
-    return this.userService.sendOTP(email, otp);
-  }
+  // @Post('sendOTP')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiOperation({ summary: 'Send OTP to user email' })
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       email: { type: 'string', example: 'zohaib@example.com' },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({ status: 200, description: 'OTP sent successfully' })
+  // async OTP(
+  //   @Body() { email }: { email: string },
+  // ): Promise<ResponseWrapper<any>> {
+  //   const otpi = generateOTP;
+  //   const otp = otpi.generateOTP();
+  //   return this.userService.sendOTP(email, otp);
+  // }
 
   @Post('forgotpassword')
   @UseGuards(JwtAuthGuard)

@@ -6,7 +6,7 @@ import { UserServiceInterface } from '../Interface/user.interface';
 import { ResponseWrapper } from '../WrapperClasses/response.wrapper';
 import * as bcrypt from 'bcrypt';
 import { EmailService } from '../Middleware/emailService';
-import { OTPData } from '../Middleware/otp.middleware';
+import OTPData from '../Middleware/otp.middleware';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UpdateUserDto } from '../DTOs/userUpdate.dto';
@@ -40,13 +40,23 @@ export class UserService implements UserServiceInterface {
 
   // Create a new user
   async create(createUserDto: CreateUserDto): Promise<ResponseWrapper<any>> {
+    const otp = OTPData.generateOTP();
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
     createUserDto.password = hashedPassword;
 
-    const newUser = new this.userModel(createUserDto);
+    const extractedUsername = createUserDto.email.split('@')[0];
+    const existingUser = await this.userModel.findOne({ userName: extractedUsername });
+    if (existingUser) {
+      throw new UnauthorizedException('Username already exists. Please try another email.');
+    }
+
+    const newUser = new this.userModel({ ...createUserDto, otp: otp.otp_code, userName: extractedUsername });
+    const sendEmail = await this.emailService.sendResetPasswordEmail(createUserDto.email, otp.otp_code);
+    if (!sendEmail) {
+      throw new UnauthorizedException('Internal Server Error.');
+    }
     const savedResult = await newUser.save();
-    // console.log("data==>", savedResult)
 
     if (!savedResult) {
       throw new UnauthorizedException('User not registered.');
@@ -57,13 +67,11 @@ export class UserService implements UserServiceInterface {
   // Update an existing register
   async update(id: string, updateUserDto: UpdateUserDto): Promise<ResponseWrapper<any>> {
     try {
-      // Agar password aya hai to usay hash karo
       if (updateUserDto.password) {
         const saltRounds = 10;
         updateUserDto.password = await bcrypt.hash(updateUserDto.password, saltRounds);
       }
 
-      // User ko update karo aur updated document return karo
       const updatedUser = await this.userModel.findByIdAndUpdate(
         id,
         { $set: updateUserDto },
@@ -108,15 +116,15 @@ export class UserService implements UserServiceInterface {
   }
 
   // Send OTP
-  async sendOTP(email: string, otp: OTPData): Promise<ResponseWrapper<any>> {
-    const result = await this.userModel.findOne({ email }).exec();
-    if (!result) {
-      throw new ResponseWrapper(400, `No user found for email: ${email}`, null);
-    }
+  // async sendOTP(email: string, otp: OTPData): Promise<ResponseWrapper<any>> {
+  //   const result = await this.userModel.findOne({ email }).exec();
+  //   if (!result) {
+  //     throw new ResponseWrapper(400, `No user found for email: ${email}`, null);
+  //   }
 
-    await this.userModel.updateOne({ email }, { otp: otp.otp_code }).exec();
-    return await this.emailService.sendResetPasswordEmail(email, otp.otp_code);
-  }
+  //   await this.userModel.updateOne({ email }, { otp: otp.otp_code }).exec();
+  //   return await this.emailService.sendResetPasswordEmail(email, otp.otp_code);
+  // }
 
   // Forgot Password
   async forgotPassword(otp: string, password: string): Promise<ResponseWrapper<any>> {

@@ -56,25 +56,25 @@ export class EmailService {
     }
 
     // Check if the user exists
-    const user = await this.userModel.findOne({ where: { email } });
+    // const user = await this.userModel.findOne({ email });
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+    // if (!user) {
+    //   throw new UnauthorizedException('User not found');
+    // }
 
     // Generate JWT token
-    const payload = { email };
-    const token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      expiresIn: parseInt(
-        process.env.JWT_VERIFICATION_TOKEN_EXPIRATION_TIME || '0',
-        10,
-      ),
-    });
+    // const payload = { email };
+    // const token = this.jwtService.sign(payload, {
+    //   secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
+    //   expiresIn: parseInt(
+    //     process.env.JWT_VERIFICATION_TOKEN_EXPIRATION_TIME || '0',
+    //     10,
+    //   ),
+    // });
 
     // Save the reset token in the user's record
-    user.resetToken = token;
-    await user.save();
+    // user.resetToken = token;
+    // await user.save();
 
     // Construct the reset URL
     const html = `<div

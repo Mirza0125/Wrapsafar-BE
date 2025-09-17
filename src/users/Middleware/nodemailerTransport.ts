@@ -13,9 +13,9 @@ dotenv.config({ path: join(__dirname, '../.env') });
   imports: [
     TypeOrmModule.forFeature([]),
     JwtModule.register({}),
-    ConfigModule.forRoot(), // Ensuring environment variables are properly loaded
+    ConfigModule.forRoot(),
   ],
-  providers: [EmailService], // No 'NODEMAILER_TRANSPORT'
+  providers: [EmailService],
   exports: [EmailService],
 })
 export class NodemailerTransporter {}
